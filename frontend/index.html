@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Gif Battle!</title>
+
+  <!-- css -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Bowlby+One+SC">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.5.3/css/bulma.css">
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- js -->
+  <script src="https://unpkg.com/vue"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.16.2/axios.js"></script>
+
+  <!-- authentication -->
+  <script src="https://cdn.auth0.com/js/auth0/9.3.1/auth0.min.js"></script>
+  <script src="auth0.js"></script>
+</head>
+<body class="has-text-centered">
+<div id="app">
+
+  <!-- =========================================================== -->
+  <!-- header ==================================================== -->
+  <!-- =========================================================== -->
+  <nav class="navbar">
+  <div class="container">
+    <a class="navbar-item" href="/">GIF BATTLE</a>
+
+    <a class="navbar-item" href="#create">Create</a>
+    <a class="navbar-item" href="#vote">Vote</a>
+    <a class="navbar-item" href="#leaderboard">Leaderboard</a>
+
+    <a class="navbar-item" @click="login" v-if="!isLoggedIn">Login</a>
+    <a class="navbar-item" @click="logout" v-if="isLoggedIn">Logout</a>
+    <a class="navbar-item" @click="refreshSession">Refresh Token</a>
+  </div>
+  </nav>
+
+  <!-- =========================================================== -->
+  <!-- our gif creator thing ===================================== -->
+  <!-- =========================================================== -->
+  <section id="create" class="hero is-primary">
+  <div class="container">
+    <h1 class="title">Create!</h1>
+
+    <!-- random gif -->
+    <div id="gif-creator" class="box">
+      
+      <!-- create the gif here -->
+      <div class="gif-container" v-if="randomGif">
+        <a class="refresh" @click="getRandomGif">🔄</a>
+        <img v-bind:src="randomGif.url">
+        <div class="caption">{{ caption }}</div>
+      </div>
+
+      <input type="text" class="input" v-model="caption">
+
+      <a class="button is-danger" v-on:click="saveGif" v-if="isLoggedIn">Create Gif</a>
+      <a class="button is-danger" v-on:click="login" v-if="!isLoggedIn">Login to Create</a>
+
+    </div>
+  </div>
+  </section>
+
+  <!-- =========================================================== -->
+  <!-- our voting app ============================================ -->
+  <!-- =========================================================== -->
+  <section id="vote" class="hero is-info">
+  <div class="container">
+    <h1 class="title">Fight!</h1>
+    
+    <div class="columns">
+
+      <div class="column is-half" v-if="battleGifs" v-for="gif in battleGifs">
+        <div class="gif-container">
+          <img :src="gif.url">
+          <div class="caption">{{ gif.caption }}</div>
+        </div>
+
+        <a class="button is-warning" @click="voteOnGif(gif.id)">Vote!</a>
+      </div>
+
+    </div>
+  </div>
+  </section>
+
+  <!-- =========================================================== -->
+  <!-- leaderboard ============================================= -->
+  <!-- =========================================================== -->
+  <section id="leaderboard" class="hero is-dark">
+  <div class="container">
+    <h1 class="title">Leaderboard!</h1>
+    
+    <table class="table is-bordered">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Gif</th>
+          <th>Votes</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <!-- loop through leaderboard -->
+        <tr v-if="leaderboard" v-for="(gif, index) in leaderboard">
+          <td>{{ index + 1 }}</td>
+          <td>
+            <div class="gif-container">
+              <img :src="gif.url">
+              <div class="caption">{{ gif.caption }}</div>
+            </div>
+          </td>
+          <td>{{ gif.votes }}</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+  </section>
+
+</div>
+
+  <!-- our vue stuff =================== -->
+  <script>
+    const app = new Vue({
+      el: '#app',
+
+      data: {
+        apiUrl: 'http://localhost:3010/api',
+        randomGif: null,
+        caption: '',
+        battleGifs: null,
+        leaderboard: null,
+        isLoggedIn: false,
+        accessToken: null,
+        idToken: null
+      },
+
+      created: function() {
+        window.authService.handleAuthentication();
+        //window.authService.checkSession();
+
+        this.getRandomGif();
+        this.getBattleGifs();
+        this.getLeaderboard();
+      },
+
+      methods: {
+        getRandomGif: function() {
+          axios.get(`${this.apiUrl}/random`)
+                .then(response => this.randomGif = response.data);
+        },
+        saveGif: function() {
+          axios.post(`${this.apiUrl}/create`, {
+            id: this.randomGif.id,
+            url: this.randomGif.url,
+            caption: this.caption,
+            votes: 0
+          }, {
+            headers : {
+              Authorization : "Bearer " + this.accessToken
+            }
+          })
+            .then(response => {
+              this.getRandomGif();
+              this.leaderboard = response.data;
+              this.caption = '';
+            }, err => {
+              alert(err)
+            });
+        },
+
+        // get the versus gifs
+        getBattleGifs: function() {
+          axios.get(`${this.apiUrl}/versus`)
+                .then(response => this.battleGifs = response.data);
+        },
+
+        // vote on a certain gif
+        voteOnGif: function(id) {
+          axios.post(`${this.apiUrl}/vote`, { id }, {
+            headers: {
+              Authorization: "Bearer " + this.accessToken
+            }
+          })
+                .then(response => {
+                  this.getBattleGifs();
+                  console.log(response);
+                  this.leaderboard = response.data;
+                });
+        },
+
+        // get the leaderboard
+        getLeaderboard: function() {
+          axios.get(`${this.apiUrl}/leaderboard`)
+                .then(response => this.leaderboard = response.data);
+        },
+
+        // login function
+        login: function() {
+          window.authService.login();
+        },
+
+        logout: function() {
+          window.authService.logout();
+        },
+        
+        refreshSession: function(){
+          window.authService.checkSession();
+          console.log(this);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

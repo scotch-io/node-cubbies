@@ -1,0 +1,76 @@
+.gif-container  {
+  position: relative;
+  text-align: center;
+}
+
+#vote .gif-container img {
+  height: 300px;
+  width: 100%;
+}
+
+.gif-container img  {
+  margin: 0 auto 15px;
+  border-radius: 15px;
+}
+
+input     {
+  margin-bottom: 15px;
+}
+
+.button   {
+  width: 100%;
+  font-size: 1.5rem;
+}
+
+.hero     {
+  min-height: 100vh;
+}
+
+.table    {
+  width: 100%;
+}
+
+.hero > .container  {
+  -webkit-box-flex: 1;
+  -ms-flex-positive: 1;
+  flex-grow: 1;
+  -ms-flex-negative: 0;
+  flex-shrink: 0;
+  padding: 3rem 1.5rem;
+}
+
+.caption  {
+  font-family: 'Bowlby One SC', sans-serif;
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 30px;
+  text-align: center;
+  color: #FFF;
+  font-size: 30px;
+  text-transform: uppercase;
+  line-height: 1;
+  word-break: break-all;
+  text-shadow:
+    3px 3px 0 #000,
+    -1px -1px 0 #000,  
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+}
+
+.refresh    {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+#gif-creator {
+  max-width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#leaderboard .caption {
+  font-size: 12px;
+}
